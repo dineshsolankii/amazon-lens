@@ -1,0 +1,11 @@
+{
+  "functions": {
+    "api/index.py": {
+      "runtime": "python3.11"
+    }
+  },
+  "routes": [
+    { "src": "/api/index/extract-images", "methods": ["POST"], "dest": "/api/index" },
+    { "src": "/api/index/health", "methods": ["GET"], "dest": "/api/index/health" }
+  ]
+}

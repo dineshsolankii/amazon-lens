@@ -1,4 +1,5 @@
 from fastapi import FastAPI, HTTPException
+from fastapi import Request
 from pydantic import BaseModel, AnyHttpUrl
 from fastapi.responses import JSONResponse
 import requests
@@ -134,4 +135,19 @@ def extract_images(req: ExtractRequest):
 def extract_images_root(req: ExtractRequest):
     return extract_images(req)
 
+@app.get('/extract-images')
+def extract_images_get(amazonUrl: str):
+    return extract_images(ExtractRequest(amazonUrl=amazonUrl))
+
+@app.api_route('/', methods=['GET'])
+def root_info():
+    return {
+        'service': 'amazon-lens',
+        'status': 'ok',
+        'endpoints': {
+            'health': '/api/index/health',
+            'extract_images_post': '/api/index',
+            'extract_images_get': '/api/index/extract-images?amazonUrl=<url>'
+        }
+    }
 
