@@ -134,3 +134,4 @@ def extract_images(req: ExtractRequest):
 def extract_images_root(req: ExtractRequest):
     return extract_images(req)
 
+
