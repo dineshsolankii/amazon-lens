@@ -98,6 +98,17 @@ def extract_product_images_from_html(html: str) -> List[str]:
 def health():
     return {'status': 'ok'}
 
+@app.get('/')
+def root():
+    return {
+        'service': 'amazon-lens',
+        'status': 'ok',
+        'endpoints': {
+            'health': '/api/index/health',
+            'extract_images': '/api/index/extract-images'
+        }
+    }
+
 @app.post('/extract-images')
 def extract_images(req: ExtractRequest):
     url = str(req.amazonUrl)
@@ -118,3 +129,7 @@ def extract_images(req: ExtractRequest):
     cache[url] = imgs
     return JSONResponse({'url': url, 'cached': False, 'images': imgs})
 
+# Vercel serverless often mounts this function at /api/index; support POST to root
+@app.post('/')
+def extract_images_root(req: ExtractRequest):
+    return extract_images(req)
