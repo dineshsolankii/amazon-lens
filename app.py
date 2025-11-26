@@ -116,6 +116,10 @@ app.add_middleware(
 def health():
     return {'status': 'ok'}
 
+@app.head('/health')
+def health_head():
+    return JSONResponse({})
+
 @app.post('/extract-images')
 def extract_images(req: ExtractRequest):
     url = str(req.amazonUrl)
@@ -144,6 +148,10 @@ def root(amazonUrl: str | None = None, format: str | None = None):
             return HTMLResponse(html)
         return JSONResponse(res)
     return {'service': 'amazon-lens', 'status': 'ok'}
+
+@app.head('/')
+def root_head():
+    return JSONResponse({})
 
 if __name__ == '__main__':
     import uvicorn

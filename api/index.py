@@ -108,6 +108,10 @@ def extract_product_images_from_html(html: str) -> List[str]:
 def health():
     return {'status': 'ok'}
 
+@app.head('/health')
+def health_head():
+    return JSONResponse({})
+
 @app.get('/')
 def root():
     return {
@@ -159,3 +163,7 @@ def root_info():
             'extract_images_get': '/api/index/extract-images?amazonUrl=<url>'
         }
     }
+
+@app.head('/')
+def root_head():
+    return JSONResponse({})
