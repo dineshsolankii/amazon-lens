@@ -2,6 +2,11 @@ from bs4 import BeautifulSoup
 import json
 from html import unescape
 import re
+from fastapi import FastAPI, HTTPException
+from pydantic import BaseModel, AnyHttpUrl
+from fastapi.responses import JSONResponse, HTMLResponse
+import requests
+from fastapi.middleware.cors import CORSMiddleware
 
 def normalize_amazon_image_url(u):
     if not u:
@@ -93,8 +98,53 @@ def extract_product_images(soup):
             out.append(u)
     return out
 
-with open('product.html', encoding='utf-8') as f:
-    soup = BeautifulSoup(f, 'html.parser')
+class ExtractRequest(BaseModel):
+    amazonUrl: AnyHttpUrl
 
-for u in extract_product_images(soup):
-    print(u)
+app = FastAPI()
+cache = {}
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+@app.get('/health')
+def health():
+    return {'status': 'ok'}
+
+@app.post('/extract-images')
+def extract_images(req: ExtractRequest):
+    url = str(req.amazonUrl)
+    if url in cache:
+        return {'url': url, 'cached': True, 'images': cache[url]}
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+    }
+    try:
+        r = requests.get(url, headers=headers, timeout=20)
+    except requests.RequestException:
+        raise HTTPException(status_code=502, detail='fetch_error')
+    if r.status_code >= 400:
+        raise HTTPException(status_code=502, detail='bad_status')
+    imgs = extract_product_images(BeautifulSoup(r.text, 'html.parser'))
+    cache[url] = imgs
+    return {'url': url, 'cached': False, 'images': imgs}
+
+@app.get('/')
+def root(amazonUrl: str | None = None, format: str | None = None):
+    if amazonUrl:
+        res = extract_images(ExtractRequest(amazonUrl=amazonUrl))
+        if format == 'html':
+            items = '\n'.join(f"<li><a href='{u}' target='_blank'>{u}</a></li>" for u in res['images'])
+            html = f"""<html><body><h1>amazon-lens</h1><p>URL: {res['url']}</p><ul>{items}</ul></body></html>"""
+            return HTMLResponse(html)
+        return JSONResponse(res)
+    return {'service': 'amazon-lens', 'status': 'ok'}
+
+if __name__ == '__main__':
+    import uvicorn
+    uvicorn.run('app:app', host='0.0.0.0', port=8000, reload=False)

@@ -1,5 +1,5 @@
 from fastapi import FastAPI, HTTPException
-from fastapi import Request
+from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, AnyHttpUrl
 from fastapi.responses import JSONResponse
 import requests
@@ -8,6 +8,7 @@ import json
 from html import unescape
 import re
 from typing import List, Dict
+from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
 
@@ -15,6 +16,14 @@ class ExtractRequest(BaseModel):
     amazonUrl: AnyHttpUrl
 
 cache: Dict[str, List[str]] = {}
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 def normalize_amazon_image_url(u: str) -> str | None:
     if not u:
@@ -150,4 +159,3 @@ def root_info():
             'extract_images_get': '/api/index/extract-images?amazonUrl=<url>'
         }
     }
-

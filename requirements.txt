@@ -2,3 +2,4 @@ fastapi>=0.112
 requests>=2.32
 beautifulsoup4>=4.12
 pydantic>=2.7
+uvicorn>=0.30
